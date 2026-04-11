@@ -1,0 +1,47 @@
+git pull
+git add -A : 변경사항 추가(파일 삭제 추가)
+git commit -m "coment"
+git push
+
+git init
+git add README.md
+git commit -m "first commit"
+git branch -M main
+git remote add origin <url>
+git push -u origin main
+토큰생성 : https://dev.classmethod.jp/articles/resolving-github-token-authentication-errors/
+
+이미 레포가 있는 경우
+git pull origin main
+
+error: failed to push some refs
+git pull {원격저장소별칭 보통 origin이라고 함} master
+
+LOGIN
+  git config --global user.email "shirohebiui@gamil.com"
+  git config --global user.name "kms"
+
+git config credential.helper store <-정보저장
+git config credential.helper store --global <-모든 프로젝트에 허용
+
+git config --global --replace-all user.name "kms"
+git config credential.helper cache
+git config credential.helper 'cache --timeout=7200'
+
+config 초기화
+git config --global --unset credential.helper 
+
+
+하위 레포
+git remote -v           상태체크
+git remote rm <name>    제거
+git remote add <remote name> <child git 주소>
+git remote add Baekjoon https://github.com/shirohebiui/BAEKJOON.git
+git subtree add --prefix=<parent 레포지토리에 저장할 폴더명> <child의 remote 이름> <원격 branch name>
+git subtree add --prefix=Baekjoon Baekjoon main
+https://santokki.tistory.com/24
+
+You are not currently on a branch.에러
+git reset –-merge
+
+git checkout <branch>

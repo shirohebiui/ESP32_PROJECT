@@ -34,9 +34,8 @@ https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32
 시리얼 모니터의 스피드를 1150200baud로 변경
 
 <details>
-  Recevier.ino
-<summary>
-  
+<summary>Recevier.ino</summary>
+
 ```bash
 #include <BLEDevice.h>
 #include <BLEUtils.h>
@@ -123,9 +122,8 @@ void loop() {
     doConnect = false;
   }
 }
-```
-</summary>
-</details>
+
+</details>```
 
 
 Sender

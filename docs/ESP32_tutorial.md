@@ -6,7 +6,7 @@ Module : ESP32 CP2102
 
 <img width="1009" height="646" alt="ESP32_CP20102_PIN_MAP" src="https://github.com/user-attachments/assets/ccaba6bb-5eda-4abc-b81e-f83096b9242d" />
 
-USB 드라이버
+USB 드라이버 : CP210x Universal Windows Driver
 ```bash
 https://www.silabs.com/software-and-tools/usb-to-uart-bridge-vcp-drivers?tab=downloads
 ```

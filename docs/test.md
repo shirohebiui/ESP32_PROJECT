@@ -5,9 +5,10 @@
 ```bash
 
   //Code1
-</details>
+
 
 ```
+</details>
 
 <details>
   
@@ -16,6 +17,7 @@
 ```bash
   
   //Code2
-</details>
+
 
 ```
+</details>

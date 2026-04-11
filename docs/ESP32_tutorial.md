@@ -33,8 +33,8 @@ https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32
 시리얼 모니터 속도 115200baud설정 안할시 속도 불일치로 값을 제대로 못읽는다.
 시리얼 모니터의 스피드를 1150200baud로 변경
 
-
-Recevie
+<details>
+<summary>Recevier.ino</summary>
 ```bash
 #include <BLEDevice.h>
 #include <BLEUtils.h>
@@ -122,6 +122,9 @@ void loop() {
   }
 }
 ```
+
+</details>
+
 
 Sender
 ```bash

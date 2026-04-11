@@ -123,8 +123,9 @@ void loop() {
   }
 }
 
-</details>```
+</details>
 
+```
 
 Sender
 ```bash
@@ -203,7 +204,9 @@ void loop() {
 
   delay(2000);  // 2초 주기
 }
+
 ```
+
 
 
 

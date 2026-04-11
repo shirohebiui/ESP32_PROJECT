@@ -1,4 +1,4 @@
-<details>
+
 <summary>Recevier.ino</summary>
 
 ```bash
@@ -12,6 +12,5 @@
   
   //Code2
 
-</details>
 
 ```

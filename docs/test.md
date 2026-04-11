@@ -10,10 +10,8 @@
   }
 }
 
-</details>
 
 ```
-
 <summary>Recevier.ino</summary>
   
 ```bash

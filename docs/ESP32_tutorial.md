@@ -11,7 +11,7 @@ Module : ESP32 CP2102
 아래 URL추가
 
 ```bash
-https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
+https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json```
 
 <img width="798" height="530" alt="ESP32_setting_1" src="https://github.com/user-attachments/assets/a85c84c4-147f-4342-927b-dabd38bfd2b9" />
 

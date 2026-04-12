@@ -33,6 +33,9 @@ https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32
 시리얼 모니터 속도 115200baud설정 안할시 속도 불일치로 값을 제대로 못읽는다.
 시리얼 모니터의 스피드를 1150200baud로 변경
 
+<img width="1306" height="858" alt="Serial_monitor_1" src="https://github.com/user-attachments/assets/ec469ca2-058b-455d-afcd-8b515c07ac5b" />
+
+<img width="559" height="303" alt="Serial_moniotr_2" src="https://github.com/user-attachments/assets/c9d6da62-af70-4292-897f-1cbd6454a117" />
 
 
 

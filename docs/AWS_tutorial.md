@@ -32,6 +32,7 @@ ESP32모듈과 AWS서버를 연결하는 창구
 ```bash
 https://eu-north-1.console.aws.amazon.com/lambda/home?region=eu-north-1#/begin
 ```
+
 <details open>
   
 <summary>2.Lambda 생성</summary>
@@ -41,5 +42,51 @@ https://eu-north-1.console.aws.amazon.com/lambda/home?region=eu-north-1#/begin
 <img width="1340" height="1096" alt="AWS_tutorial_Lambda_2" src="https://github.com/user-attachments/assets/502dd84a-cacd-4680-a251-ebc092985881" />
 
 <img width="1331" height="922" alt="AWS_tutorial_Lambda_3" src="https://github.com/user-attachments/assets/26028105-3a84-4cbd-b997-1c1edbfb18c7" />
+
+</details>
+
+<details open>
+  
+<summary>3.API → Lambda 연결</summary>
+
+생성한 API  선택 
+<img width="1347" height="434" alt="AWS_tutorial_Connect_1" src="https://github.com/user-attachments/assets/834fa5d0-3f5e-4345-9576-899f4b99564a" />
+
+Develop > Routes 에서 “생선한 API”의 “생성” 클릭
+<img width="1014" height="319" alt="AWS_tutorial_Connect_2" src="https://github.com/user-attachments/assets/3ca0ebfd-875e-43ee-ba37-a843057a4b62" />
+
+경로 생성에서 [메서드 “POST”, 경로 “/data”] 생성
+<img width="1001" height="318" alt="AWS_tutorial_Connect_3" src="https://github.com/user-attachments/assets/f4e5fb58-9883-4e99-b5b6-aff1bc2c26ac" />
+
+Develop > Integrations 에서 통합 생성 및 연결 클릭
+<img width="1347" height="521" alt="AWS_tutorial_Connect_4" src="https://github.com/user-attachments/assets/bdc6b942-4596-43f1-b531-3d388e6c8ee1" />
+
+통합 유형에서 이전에 생성한 Lambda함수선택 후 생성
+<img width="1341" height="479" alt="AWS_tutorial_Connect_5" src="https://github.com/user-attachments/assets/97907776-a432-4108-bac2-390b984e8562" />
+
+<img width="1009" height="1017" alt="AWS_tutorial_Connect_6" src="https://github.com/user-attachments/assets/1219c518-cf43-42c9-977a-c0c68f157889" />
+
+결과
+<img width="1016" height="839" alt="AWS_tutorial_Connect_7" src="https://github.com/user-attachments/assets/76bbf896-5d17-4dfd-b5ba-acb8ca902cf6" />
+
+검사
+
+Deploy > Stages 에서 [URL호출주소]를 복사후
+<img width="1322" height="484" alt="AWS_tutorial_Connect_8" src="https://github.com/user-attachments/assets/8b89daad-4759-4212-9821-ed1c9468d341" />
+
+cmd/터미널 에서 아래 명령어 URL호출주소를 실행
+```bash
+curl -X POST 자신의URL/data -H "Content-Type: application/json" -d "{}"
+```
+예시
+```bash
+curl -X POST https://scku0upgj8.execute-api.us-east-1.amazonaws.com/data -H "Content-Type: application/json" -d "{}"
+```
+“Hello from Lambda” 가 출력되면 성공
+
+<img width="1115" height="71" alt="AWS_tutorial_Connect_9" src="https://github.com/user-attachments/assets/b9fb40ff-938c-486d-8e52-83a894b81447" />
+
+<img width="567" height="44" alt="AWS_tutorial_Connect_10" src="https://github.com/user-attachments/assets/d3f0b716-0e04-4928-960b-9329fee61b91" />
+
 
 </details>

@@ -205,7 +205,7 @@ void loop() {
 
   // ===== 전송 포맷 =====
   int Ch = 0;
-  String msg = "{Ch : " + Int(Ch) + ",value:" + String(value) + "}";
+  String msg = "{Ch : " + String(Ch) + ",value:" + String(value) + "}";
 
   Serial.println(msg);
 

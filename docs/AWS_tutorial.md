@@ -36,6 +36,10 @@ https://eu-north-1.console.aws.amazon.com/lambda/home?region=eu-north-1#/begin
   
 <summary>2.Lambda 생성</summary>
 
+<img width="1334" height="488" alt="AWS_tutorial_Lambda_1" src="https://github.com/user-attachments/assets/852bc2e3-0220-41f7-8ec6-73a45b3667ff" />
 
+<img width="1340" height="1096" alt="AWS_tutorial_Lambda_2" src="https://github.com/user-attachments/assets/502dd84a-cacd-4680-a251-ebc092985881" />
+
+<img width="1331" height="922" alt="AWS_tutorial_Lambda_3" src="https://github.com/user-attachments/assets/26028105-3a84-4cbd-b997-1c1edbfb18c7" />
 
 </details>

@@ -37,92 +37,139 @@ https://www.silabs.com/software-and-tools/usb-to-uart-bridge-vcp-drivers?tab=dow
 
 ```bash
 
-#include <BLEDevice.h>
-#include <BLEUtils.h>
-#include <BLEClient.h>
-#include <BLERemoteCharacteristic.h>
-#include <BLEAdvertisedDevice.h>
+#include <NimBLEDevice.h>
 
-// ===== BLE UUID =====
+// ===== UUID =====
 #define SERVICE_UUID        "12345678-1234-1234-1234-1234567890ab"
 #define CHARACTERISTIC_UUID "abcd1234-5678-1234-5678-1234567890ab"
 
-static BLERemoteCharacteristic* pRemoteCharacteristic;
-static BLEAdvertisedDevice* myDevice;
-
+static const NimBLEAdvertisedDevice* myDevice = nullptr;
+static NimBLEClient* pClient                  = nullptr;
 bool doConnect = false;
 
-// ===== BLE 장치 탐색 =====
-class MyAdvertisedDeviceCallbacks: public BLEAdvertisedDeviceCallbacks {
-  void onResult(BLEAdvertisedDevice advertisedDevice) {
+// ===== notify 수신 콜백 =====
+void notifyCallback(
+  NimBLERemoteCharacteristic* pRC,
+  uint8_t* pData,
+  size_t length,
+  bool isNotify)
+{
+  String received = "";
+  for (size_t i = 0; i < length; i++) {
+    received += (char)pData[i];
+  }
+  Serial.print("[RECV] ");
+  Serial.println(received);
+}
 
-    // 이름으로 Sender 찾기
-    if (advertisedDevice.getName() == "ESP32_SENDER") {
-      myDevice = new BLEAdvertisedDevice(advertisedDevice);
+// ===== 클라이언트 연결 콜백 =====
+class MyClientCallbacks : public NimBLEClientCallbacks {
+  void onConnect(NimBLEClient* pClient) override {
+    Serial.println("[BLE] Connected to server.");
+  }
+
+  void onDisconnect(NimBLEClient* pClient, int reason) override {
+    Serial.print("[BLE] Disconnected. Reason: ");
+    Serial.println(reason);
+    NimBLEDevice::getScan()->start(0, false);
+    Serial.println("[BLE] Restarting scan...");
+  }
+};
+
+// ===== 스캔 콜백 =====
+class MyScanCallbacks : public NimBLEScanCallbacks {
+  void onResult(const NimBLEAdvertisedDevice* dev) override {
+    if (dev->isAdvertisingService(NimBLEUUID(SERVICE_UUID))) {
+      Serial.print("[SCAN] Target found: ");
+      Serial.println(dev->getAddress().toString().c_str());
+
+      NimBLEDevice::getScan()->stop();
+      myDevice  = dev;
       doConnect = true;
-      BLEDevice::getScan()->stop();
+    }
+  }
+
+  void onScanEnd(const NimBLEScanResults& results, int reason) override {
+    Serial.print("[SCAN] Scan ended. reason: ");
+    Serial.println(reason);
+    if (!doConnect && (!pClient || !pClient->isConnected())) {
+      NimBLEDevice::getScan()->start(0, false);
     }
   }
 };
 
-// ===== 데이터 수신 (notify) =====
-void notifyCallback(
-  BLERemoteCharacteristic* pBLERemoteCharacteristic,
-  uint8_t* pData,
-  size_t length,
-  bool isNotify) {
+// ===== 서버 연결 함수 =====
+bool connectToServer() {
+  Serial.println("[BLE] Connecting...");
 
-  String received = "";
+  pClient = NimBLEDevice::createClient();
+  pClient->setClientCallbacks(new MyClientCallbacks());
 
-  // 수신 데이터 문자열 변환
-  for (int i = 0; i < length; i++) {
-    received += (char)pData[i];
+  if (!pClient->connect(myDevice)) {
+    Serial.println("[BLE] Connect FAIL");
+    NimBLEDevice::deleteClient(pClient);
+    pClient = nullptr;
+    return false;
   }
 
-  // 그대로 출력
-  Serial.println(received);
-}
+  Serial.println("[BLE] Connected!");
 
-// ===== 서버 연결 =====
-void connectToServer() {
-
-  BLEClient* pClient = BLEDevice::createClient();
-  pClient->connect(myDevice);
-
-  BLERemoteService* pService = pClient->getService(SERVICE_UUID);
-  pRemoteCharacteristic = pService->getCharacteristic(CHARACTERISTIC_UUID);
-
-  // notify 활성화 (필수)
-  if (pRemoteCharacteristic->canNotify()) {
-    pRemoteCharacteristic->registerForNotify(notifyCallback);
-
-    uint8_t notificationOn[] = {0x1, 0x0};
-    pRemoteCharacteristic->getDescriptor(BLEUUID((uint16_t)0x2902))
-      ->writeValue(notificationOn, 2, true);
+  NimBLERemoteService* pService = pClient->getService(SERVICE_UUID);
+  if (!pService) {
+    Serial.println("[BLE] Service NOT found");
+    pClient->disconnect();
+    return false;
   }
+
+  NimBLERemoteCharacteristic* pChar = pService->getCharacteristic(CHARACTERISTIC_UUID);
+  if (!pChar) {
+    Serial.println("[BLE] Characteristic NOT found");
+    pClient->disconnect();
+    return false;
+  }
+
+  if (pChar->canNotify()) {
+    if (pChar->subscribe(true, notifyCallback)) {
+      Serial.println("[BLE] Notify subscribed OK");
+    } else {
+      Serial.println("[BLE] Notify subscribe FAIL");
+      pClient->disconnect();
+      return false;
+    }
+  }
+
+  return true;
 }
 
 void setup() {
   Serial.begin(115200);
+  delay(2000);
+  Serial.println("===== RECEIVER START =====");
 
-  BLEDevice::init("");
+  NimBLEDevice::init("");
 
-  // ===== 스캔 시작 =====
-  BLEScan* scan = BLEDevice::getScan();
-  scan->setAdvertisedDeviceCallbacks(new MyAdvertisedDeviceCallbacks());
+  NimBLEScan* scan = NimBLEDevice::getScan();
+  scan->setScanCallbacks(new MyScanCallbacks());
   scan->setActiveScan(true);
-  scan->start(0, nullptr);  // 무한 스캔
+  scan->setInterval(100);
+  scan->setWindow(99);
+  scan->setMaxResults(0);
+
+  scan->start(0, false);
+  Serial.println("[SCAN] Started.");
 }
 
 void loop() {
-
-  // ===== 발견 시 연결 =====
   if (doConnect) {
-    connectToServer();
     doConnect = false;
+    if (connectToServer()) {
+      Serial.println(">>> CONNECT SUCCESS <<<");
+    } else {
+      Serial.println(">>> CONNECT FAIL — restarting scan <<<");
+      NimBLEDevice::getScan()->start(0, false);
+    }
   }
 }
-
 
 ```
 </details>
@@ -133,80 +180,119 @@ void loop() {
   
 ```bash
 
-#include <BLEDevice.h>
-#include <BLEUtils.h>
-#include <BLEServer.h>
-#include <BLE2902.h>
+#include <NimBLEDevice.h>
 
-// ===== BLE UUID =====
+// ===== UUID =====
 #define SERVICE_UUID        "12345678-1234-1234-1234-1234567890ab"
 #define CHARACTERISTIC_UUID "abcd1234-5678-1234-5678-1234567890ab"
 
 // ===== 센서 핀 =====
-#define SENSOR_PIN 25   // DO 연결
+#define SENSOR_PIN       25
+#define SEND_INTERVAL_MS 2000
 
-BLECharacteristic *pCharacteristic;
+NimBLECharacteristic* pCharacteristic = nullptr;
 bool deviceConnected = false;
+bool prevConnected   = false;
+unsigned long lastSendMs = 0;
 
-// ===== BLE 연결 상태 =====
-class MyServerCallbacks: public BLEServerCallbacks {
-  void onConnect(BLEServer* pServer) {
+// ===== 연결 상태 콜백 (2.x 시그니처) =====
+class MyServerCallbacks : public NimBLEServerCallbacks {
+  // ✅ 2.x: NimBLEConnInfo& 파라미터 추가
+  void onConnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo) override {
     deviceConnected = true;
+    Serial.print("[BLE] Client connected: ");
+    Serial.println(connInfo.getAddress().toString().c_str());
   }
 
-  void onDisconnect(BLEServer* pServer) {
+  // ✅ 2.x: NimBLEConnInfo& + int reason 파라미터 추가
+  void onDisconnect(NimBLEServer* pServer, NimBLEConnInfo& connInfo, int reason) override {
     deviceConnected = false;
-    BLEDevice::startAdvertising();
+    Serial.print("[BLE] Disconnected. Reason: ");
+    Serial.println(reason);
+    NimBLEDevice::getAdvertising()->start();
   }
 };
 
-void setup() {
-  Serial.begin(115200); //Serial Speed 115200 baud
+// ===== 광고 설정 =====
+void startAdvertising() {
+  NimBLEAdvertising* pAdvertising = NimBLEDevice::getAdvertising();
 
-  // ===== 센서 입력 설정 =====
+  // 광고 패킷: 서비스 UUID
+  NimBLEAdvertisementData advData;
+  advData.setCompleteServices(NimBLEUUID(SERVICE_UUID));
+  pAdvertising->setAdvertisementData(advData);
+
+  // Scan response: 디바이스 이름
+  NimBLEAdvertisementData scanData;
+  scanData.setName("ESP32_SENDER");
+  pAdvertising->setScanResponseData(scanData);
+
+  // ✅ 2.x: setMinPreferred/setMaxPreferred → setPreferredParams(min, max)
+  pAdvertising->setPreferredParams(0x06, 0x12);
+
+  pAdvertising->start();
+  Serial.println("[BLE] Advertising started.");
+}
+
+void setup() {
+  Serial.begin(115200);
+  delay(500);
   pinMode(SENSOR_PIN, INPUT);
 
-  // ===== BLE 초기화 =====
-  BLEDevice::init("ESP32_SENDER");
+  NimBLEDevice::init("ESP32_SENDER");
 
-  BLEServer *pServer = BLEDevice::createServer();
+  // ✅ 2.x: ESP_PWR_LVL_P9 → 정수 dBm 값 (9)
+  NimBLEDevice::setPower(9);
+
+  NimBLEServer* pServer = NimBLEDevice::createServer();
   pServer->setCallbacks(new MyServerCallbacks());
 
-  BLEService *pService = pServer->createService(SERVICE_UUID);
+  NimBLEService* pService = pServer->createService(SERVICE_UUID);
 
+  // CCCD는 NOTIFY 설정 시 자동 추가 — 수동 추가 불필요
   pCharacteristic = pService->createCharacteristic(
-                      CHARACTERISTIC_UUID,
-                      BLECharacteristic::PROPERTY_NOTIFY
-                    );
+    CHARACTERISTIC_UUID,
+    NIMBLE_PROPERTY::NOTIFY
+  );
 
-  pCharacteristic->addDescriptor(new BLE2902());
   pService->start();
-
-  BLEAdvertising *pAdvertising = BLEDevice::getAdvertising();
-  pAdvertising->addServiceUUID(SERVICE_UUID);
-  pAdvertising->setScanResponse(true);
-
-  BLEDevice::startAdvertising();
+  startAdvertising();
 }
 
 void loop() {
+  unsigned long now = millis();
 
-  // ===== 센서값 읽기 (0 또는 1) =====
-  int value = digitalRead(SENSOR_PIN);
+  int sensorValue = digitalRead(SENSOR_PIN);
 
-  // ===== 전송 포맷 =====
-  int Ch = 0;
-  String msg = "{Ch : " + String(Ch) + ",value:" + String(value) + "}";
-
-  Serial.println(msg);
-
-  // ===== BLE 전송 =====
-  if (deviceConnected) {
-    pCharacteristic->setValue(msg.c_str());
-    pCharacteristic->notify();
+  if (!deviceConnected && prevConnected) {
+    NimBLEDevice::getAdvertising()->start();
+    prevConnected = false;
+  }
+  if (deviceConnected && !prevConnected) {
+    prevConnected = true;
   }
 
-  delay(2000);  // 2초 주기
+
+  // ✅ 연결 대기 중 상태 출력 (5초마다)
+  static unsigned long lastStatusMs = 0;
+  if (!deviceConnected && (now - lastStatusMs >= 5000)) {
+    lastStatusMs = now;
+    Serial.print("[BLE] Waiting for connection... Sensor : ");
+    Serial.println(sensorValue);
+  }
+
+  if (deviceConnected && (now - lastSendMs >= SEND_INTERVAL_MS)) {
+    lastSendMs = now;
+
+    int ch = 0;
+    String msg = "{Ch:" + String(ch) + ",value:" + String(sensorValue) + "}";
+
+    pCharacteristic->setValue(msg.c_str());
+    pCharacteristic->notify();
+
+    Serial.print("[SEND] ");
+    Serial.println(msg);
+  }
 }
 
 ```

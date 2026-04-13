@@ -12,19 +12,10 @@ https://www.silabs.com/software-and-tools/usb-to-uart-bridge-vcp-drivers?tab=dow
 ```
 
 
-상단메뉴 → 기본설정 → 추가 보드 관리자 URL
+도구 → 보드 → 보드 매니저 → 검색 ( NimBLE ) → “NimBLE-Arduino” 설치
 
-아래 URL추가
+<img width="220" height="483" alt="ESP_setting_1" src="https://github.com/user-attachments/assets/e97a4c10-667c-4d61-8d2f-01ab70ca506a" />
 
-```bash
-https://raw.githubusercontent.com/espressif/arduino-esp32/gh-pages/package_esp32_index.json
-```
-
-<img width="798" height="530" alt="ESP32_setting_1" src="https://github.com/user-attachments/assets/a85c84c4-147f-4342-927b-dabd38bfd2b9" />
-
-도구 → 보드 → 보드 매니저 → 검색 ( ESP32 ) → “esp32 by Espressif” 설치
-
-<img width="221" height="440" alt="ESP32_setting_2" src="https://github.com/user-attachments/assets/013eee87-d091-407b-8e2f-ce08a4b6e4b3" />
 
 도구 → 보드 → esp32 → ESP32 Dev Module 선택
 

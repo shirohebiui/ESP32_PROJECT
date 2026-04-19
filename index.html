@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>DynamoDB Viewer</title>
+  <style>
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #4CAF50; color: white; }
+    tr:nth-child(even) { background-color: #f2f2f2; }
+  </style>
+</head>
+<body>
+  <h1>DynamoDB 데이터</h1>
+  <div id="loading">불러오는 중...</div>
+  <table id="table" style="display:none">
+    <thead><tr id="headers"></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+
+  <script>
+    const API = 'https://xxxxxxxxxx.execute-api.ap-northeast-2.amazonaws.com/data'; // ← URL 교체
+
+    fetch(API)
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('table').style.display = 'table';
+
+        const keys = Object.keys(data[0]);
+
+        // 헤더
+        keys.forEach(k => {
+          document.getElementById('headers').innerHTML += `<th>${k}</th>`;
+        });
+
+        // 데이터
+        data.forEach(item => {
+          const tr = document.createElement('tr');
+          keys.forEach(k => {
+            tr.innerHTML += `<td>${item[k] ?? ''}</td>`;
+          });
+          document.getElementById('rows').appendChild(tr);
+        });
+      })
+      .catch(() => {
+        document.getElementById('loading').textContent = '데이터 로딩 실패';
+      });
+  </script>
+</body>
+</html>

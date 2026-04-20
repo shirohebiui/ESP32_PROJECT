@@ -19,7 +19,7 @@ Lambda함수 페이지에서 함수생성
 
 <details>
   
-<summary>Lambda함수 (python3.12)</summary>
+<summary>Lambda함수 (python3.12) 펼치기</summary>
 
 ```bash
 
@@ -108,7 +108,80 @@ GET->통합연결
 4.(선택)github Page기능 활용하여 DB를 시각화하여 조회
 
 gitHub설정
+<img width="1376" height="971" alt="gitweb1" src="https://github.com/user-attachments/assets/d4a7af98-314e-41a0-9120-e8ee78f252fb" />
 
+<details>
+  
+<summary>index.html 코드 펼치기</summary>
+
+```bash
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>DynamoDB Viewer</title>
+  <style>
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+    th { background-color: #4CAF50; color: white; }
+    tr:nth-child(even) { background-color: #f2f2f2; }
+  </style>
+</head>
+<body>
+  <h1>DynamoDB 데이터</h1>
+  <div id="loading">불러오는 중...</div>
+  <table id="table" style="display:none">
+    <thead><tr id="headers"></tr></thead>
+    <tbody id="rows"></tbody>
+  </table>
+
+  <script>
+    const API = 'https://scku0upgj8.execute-api.us-east-1.amazonaws.com/data'; // ← URL 교체
+
+    fetch(API)
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('table').style.display = 'table';
+
+        const keys = Object.keys(data[0]);
+
+        // 헤더
+        keys.forEach(k => {
+          document.getElementById('headers').innerHTML += `<th>${k}</th>`;
+        });
+
+        // 데이터
+        data.forEach(item => {
+          const tr = document.createElement('tr');
+          keys.forEach(k => {
+            tr.innerHTML += `<td>${item[k] ?? ''}</td>`;
+          });
+          document.getElementById('rows').appendChild(tr);
+        });
+      })
+      .catch(() => {
+        document.getElementById('loading').textContent = '데이터 로딩 실패';
+      });
+  </script>
+</body>
+</html>
+
+```
+</details>
+
+5. 결과 조회
+
+AWS DB에서 현재 DB내용
+<img width="632" height="290" alt="result3" src="https://github.com/user-attachments/assets/47501988-f054-42d8-818f-2e79f521af7b" />
+
+
+경로로 직접 조회
+<img width="1002" height="146" alt="result1" src="https://github.com/user-attachments/assets/8d48165d-51cc-495b-9d11-b62d9155530a" />
+
+github Page로 조회
+<img width="889" height="222" alt="result2" src="https://github.com/user-attachments/assets/28543b62-ae5b-437a-9cf3-e61738819f01" />
 
 
 

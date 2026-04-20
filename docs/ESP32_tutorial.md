@@ -16,6 +16,11 @@ https://www.silabs.com/software-and-tools/usb-to-uart-bridge-vcp-drivers?tab=dow
 
 <img width="220" height="483" alt="ESP_setting_1" src="https://github.com/user-attachments/assets/e97a4c10-667c-4d61-8d2f-01ab70ca506a" />
 
+앱 용량 늘리기
+
+<img width="868" height="1016" alt="ESP_setting_2" src="https://github.com/user-attachments/assets/8bb2f79a-c9fa-4515-b92c-e4d598577855" />
+
+
 
 도구 → 보드 → esp32 → ESP32 Dev Module 선택
 

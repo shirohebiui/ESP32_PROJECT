@@ -17,9 +17,9 @@ Lambda함수 페이지에서 함수생성
 <img width="1026" height="1137" alt="Lambda3" src="https://github.com/user-attachments/assets/ada19f24-6085-4754-851c-d8ffa760fe35" />
 
 
-<details>
+<details open>
   
-<summary>Lambda함수 (python3.12) 펼치기</summary>
+<summary>Lambda함수 (python3.12)</summary>
 
 ```bash
 

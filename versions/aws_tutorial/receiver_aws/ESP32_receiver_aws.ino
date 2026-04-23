@@ -4,8 +4,10 @@
 #include <WiFiClientSecure.h>
 
 // ===== WiFi 설정 =====
-#define WIFI_SSID     "olleh_WiFi_C75D" // <<수정필요
-#define WIFI_PASSWORD "0000000985" // <<수정필요
+// #define WIFI_SSID     "olleh_WiFi_C75D" // <<수정필요
+// #define WIFI_PASSWORD "0000000985" // <<수정필요
+#define WIFI_SSID     "kms" // <<수정필요
+#define WIFI_PASSWORD "10111101" // <<수정필요
 
 // ===== AWS API 설정 =====
 #define AWS_URL "https://scku0upgj8.execute-api.us-east-1.amazonaws.com/data" //<- 자신의 API URL  ex)"https://scku0upgj8.execute-api.us-east-1.amazonaws.com/data"

@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>담배 진열 현황</title>
+  <title>담배 재고 현황</title>
   <style>
     table { border-collapse: collapse; width: 100%; }
     th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
@@ -91,7 +91,7 @@
       const headerRow = document.getElementById('headers');
       keys.forEach(k => {
         const th = document.createElement('th');
-        th.textContent = k;
+        th.textContent = k === 'value' ? '재고' : k;
         headerRow.appendChild(th);
         if (k === 'id') {
           const thName = document.createElement('th');

@@ -2,16 +2,20 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>DynamoDB Viewer</title>
+  <title>담배 진열 현황</title>
   <style>
     table { border-collapse: collapse; width: 100%; }
     th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
     th { background-color: #4CAF50; color: white; }
     tr:nth-child(even) { background-color: #f2f2f2; }
+    .edit-btn { padding: 3px 8px; cursor: pointer; }
+    .name-input { width: 120px; padding: 3px; }
+    .save-btn { padding: 3px 8px; cursor: pointer; background: #4CAF50; color: white; border: none; }
+    .cancel-btn { padding: 3px 8px; cursor: pointer; }
   </style>
 </head>
 <body>
-  <h1>DynamoDB 데이터</h1>
+  <h1>담배 진열 현황</h1>
   <div id="loading">불러오는 중...</div>
   <table id="table" style="display:none">
     <thead><tr id="headers"></tr></thead>
@@ -19,33 +23,113 @@
   </table>
 
   <script>
-    const API = 'https://scku0upgj8.execute-api.us-east-1.amazonaws.com/data'; // ← URL 교체
+    const API_URL = 'https://scku0upgj8.execute-api.us-east-1.amazonaws.com/data';
+    const STORAGE_KEY = 'stockNames';
 
-    fetch(API)
-      .then(res => res.json())
-      .then(data => {
+    // localStorage에서 재고명 불러오기
+    function loadStockNames() {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved) : {};
+    }
+
+    // localStorage에 재고명 저장
+    function saveStockNames(stockNames) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(stockNames));
+    }
+
+    let stockNames = loadStockNames();
+
+    // 편집 모드 진입
+    function enableEdit(td, id) {
+      const currentName = stockNames[id] ?? '';
+      td.innerHTML = `
+        <input class="name-input" value="${currentName}" id="input-${id}">
+        <button class="save-btn" onclick="saveName('${id}', this)">저장</button>
+        <button class="cancel-btn" onclick="cancelEdit(this, '${id}')">취소</button>
+      `;
+      document.getElementById(`input-${id}`).focus();
+    }
+
+    // 취소
+    function cancelEdit(btn, id) {
+      const td = btn.closest('td');
+      renderNameCell(td, id);
+    }
+
+    // 저장
+    function saveName(id, btn) {
+      const input = document.getElementById(`input-${id}`);
+      const newName = input.value.trim();
+      stockNames[id] = newName;
+      saveStockNames(stockNames);
+
+      const td = btn.closest('td');
+      renderNameCell(td, id);
+    }
+
+    // 재고명 셀 일반 상태로 렌더링
+    function renderNameCell(td, id) {
+      const name = stockNames[id] || '(미등록)';
+      td.innerHTML = '';
+
+      const span = document.createElement('span');
+      span.textContent = name + ' ';
+      td.appendChild(span);
+
+      const btn = document.createElement('button');
+      btn.className = 'edit-btn';
+      btn.textContent = '이름 수정';
+      btn.onclick = () => enableEdit(td, id);
+      td.appendChild(btn);
+    }
+
+    // 테이블 렌더링
+    function renderTable(data) {
+      const keys = Object.keys(data[0]);
+
+      // 헤더
+      const headerRow = document.getElementById('headers');
+      keys.forEach(k => {
+        const th = document.createElement('th');
+        th.textContent = k;
+        headerRow.appendChild(th);
+        if (k === 'id') {
+          const thName = document.createElement('th');
+          thName.textContent = '재고명';
+          headerRow.appendChild(thName);
+        }
+      });
+
+      // 행
+      data.forEach(item => {
+        const tr = document.createElement('tr');
+        keys.forEach(k => {
+          const td = document.createElement('td');
+          td.textContent = item[k] ?? '';
+          tr.appendChild(td);
+
+          if (k === 'id') {
+            const tdName = document.createElement('td');
+            renderNameCell(tdName, item[k]);
+            tr.appendChild(tdName);
+          }
+        });
+        document.getElementById('rows').appendChild(tr);
+      });
+    }
+
+    // 초기 실행
+    (async () => {
+      try {
+        const res = await fetch(API_URL);
+        const data = await res.json();
         document.getElementById('loading').style.display = 'none';
         document.getElementById('table').style.display = 'table';
-
-        const keys = Object.keys(data[0]);
-
-        // 헤더
-        keys.forEach(k => {
-          document.getElementById('headers').innerHTML += `<th>${k}</th>`;
-        });
-
-        // 데이터
-        data.forEach(item => {
-          const tr = document.createElement('tr');
-          keys.forEach(k => {
-            tr.innerHTML += `<td>${item[k] ?? ''}</td>`;
-          });
-          document.getElementById('rows').appendChild(tr);
-        });
-      })
-      .catch(() => {
+        renderTable(data);
+      } catch (e) {
         document.getElementById('loading').textContent = '데이터 로딩 실패';
-      });
+      }
+    })();
   </script>
 </body>
 </html>

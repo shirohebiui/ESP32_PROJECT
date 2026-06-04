@@ -2,93 +2,337 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>담배 재고 현황</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
-    table { border-collapse: collapse; width: 100%; }
-    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-    th { background-color: #4CAF50; color: white; }
-    tr:nth-child(even) { background-color: #f2f2f2; }
-    .edit-btn { padding: 3px 8px; cursor: pointer; }
-    .name-input { width: 120px; padding: 3px; }
-    .save-btn { padding: 3px 8px; cursor: pointer; background: #4CAF50; color: white; border: none; }
-    .cancel-btn { padding: 3px 8px; cursor: pointer; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0f11;
+      --bg2: #18181c;
+      --bg3: #222228;
+      --border: rgba(255,255,255,0.07);
+      --border2: rgba(255,255,255,0.13);
+      --accent: #00e5a0;
+      --accent-dim: rgba(0,229,160,0.12);
+      --accent-dim2: rgba(0,229,160,0.06);
+      --text: #f0f0f0;
+      --text2: #9a9aa8;
+      --text3: #5a5a68;
+      --danger: #ff5f5f;
+    }
+
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 48px 32px;
+    }
+
+    .header {
+      display: flex;
+      align-items: flex-end;
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+
+    .header-title {
+      font-size: 26px;
+      font-weight: 600;
+      letter-spacing: -0.5px;
+      color: var(--text);
+    }
+
+    .header-badge {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--accent);
+      background: var(--accent-dim);
+      border: 1px solid rgba(0,229,160,0.25);
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-bottom: 3px;
+      letter-spacing: 0.5px;
+    }
+
+    .divider {
+      width: 100%;
+      height: 1px;
+      background: var(--border);
+      margin-bottom: 28px;
+    }
+
+    #loading {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text2);
+      font-size: 14px;
+      padding: 40px 0;
+    }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--border2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .table-wrap {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--bg2);
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    thead {
+      background: var(--bg3);
+      border-bottom: 1px solid var(--border2);
+    }
+
+    th {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--text3);
+      padding: 14px 20px;
+      text-align: left;
+    }
+
+    th:first-child { color: var(--accent); }
+
+    td {
+      padding: 14px 20px;
+      font-size: 14px;
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    tr:last-child td { border-bottom: none; }
+
+    tr:hover td { background: rgba(255,255,255,0.02); }
+
+    td:first-child {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--text3);
+    }
+
+    .stock-num {
+      font-family: 'DM Mono', monospace;
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--accent);
+    }
+
+    .name-cell {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .name-text {
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .name-text.empty {
+      color: var(--text3);
+      font-style: italic;
+    }
+
+    .edit-btn {
+      background: none;
+      border: 1px solid var(--border2);
+      color: var(--text3);
+      font-size: 11px;
+      font-family: 'Noto Sans KR', sans-serif;
+      padding: 3px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .edit-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-dim2);
+    }
+
+    .edit-wrap {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .name-input {
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 13px;
+      padding: 5px 10px;
+      border-radius: 7px;
+      width: 140px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .name-input:focus {
+      border-color: var(--accent);
+    }
+
+    .save-btn {
+      background: var(--accent);
+      border: none;
+      color: #0f0f11;
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+
+    .save-btn:hover { opacity: 0.85; }
+
+    .cancel-btn {
+      background: none;
+      border: 1px solid var(--border2);
+      color: var(--text3);
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 12px;
+      padding: 5px 10px;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .cancel-btn:hover {
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    .error-msg {
+      color: var(--danger);
+      font-size: 14px;
+      padding: 40px 0;
+    }
   </style>
 </head>
 <body>
-  <h1>담배 진열 현황</h1>
-  <div id="loading">불러오는 중...</div>
-  <table id="table" style="display:none">
-    <thead><tr id="headers"></tr></thead>
-    <tbody id="rows"></tbody>
-  </table>
+
+  <div class="header">
+    <h1 class="header-title">담배 진열 현황</h1>
+    <span class="header-badge">LIVE</span>
+  </div>
+  <div class="divider"></div>
+
+  <div id="loading">
+    <div class="spinner"></div>
+    데이터 불러오는 중...
+  </div>
+
+  <div class="table-wrap" id="table-wrap" style="display:none">
+    <table id="table">
+      <thead><tr id="headers"></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
 
   <script>
     const API_URL = 'https://scku0upgj8.execute-api.us-east-1.amazonaws.com/data';
     const STORAGE_KEY = 'stockNames';
 
-    // localStorage에서 재고명 불러오기
     function loadStockNames() {
       const saved = localStorage.getItem(STORAGE_KEY);
       return saved ? JSON.parse(saved) : {};
     }
 
-    // localStorage에 재고명 저장
     function saveStockNames(stockNames) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(stockNames));
     }
 
     let stockNames = loadStockNames();
 
-    // 편집 모드 진입
-    function enableEdit(td, id) {
-      const currentName = stockNames[id] ?? '';
-      td.innerHTML = `
-        <input class="name-input" value="${currentName}" id="input-${id}">
-        <button class="save-btn" onclick="saveName('${id}', this)">저장</button>
-        <button class="cancel-btn" onclick="cancelEdit(this, '${id}')">취소</button>
-      `;
-      document.getElementById(`input-${id}`).focus();
-    }
-
-    // 취소
-    function cancelEdit(btn, id) {
-      const td = btn.closest('td');
-      renderNameCell(td, id);
-    }
-
-    // 저장
-    function saveName(id, btn) {
-      const input = document.getElementById(`input-${id}`);
-      const newName = input.value.trim();
-      stockNames[id] = newName;
-      saveStockNames(stockNames);
-
-      const td = btn.closest('td');
-      renderNameCell(td, id);
-    }
-
-    // 재고명 셀 일반 상태로 렌더링
     function renderNameCell(td, id) {
-      const name = stockNames[id] || '(미등록)';
+      const name = stockNames[id] || '';
       td.innerHTML = '';
+      const wrap = document.createElement('div');
+      wrap.className = 'name-cell';
 
       const span = document.createElement('span');
-      span.textContent = name + ' ';
-      td.appendChild(span);
+      span.className = 'name-text' + (name ? '' : ' empty');
+      span.textContent = name || '(미등록)';
+      wrap.appendChild(span);
 
       const btn = document.createElement('button');
       btn.className = 'edit-btn';
-      btn.textContent = '이름 수정';
+      btn.textContent = '수정';
       btn.onclick = () => enableEdit(td, id);
-      td.appendChild(btn);
+      wrap.appendChild(btn);
+
+      td.appendChild(wrap);
     }
 
-    // 테이블 렌더링
+    function enableEdit(td, id) {
+      const currentName = stockNames[id] ?? '';
+      td.innerHTML = '';
+      const wrap = document.createElement('div');
+      wrap.className = 'edit-wrap';
+
+      const input = document.createElement('input');
+      input.className = 'name-input';
+      input.value = currentName;
+      input.id = 'input-' + id;
+      input.placeholder = '재고명 입력';
+
+      const saveBtn = document.createElement('button');
+      saveBtn.className = 'save-btn';
+      saveBtn.textContent = '저장';
+      saveBtn.onclick = () => {
+        stockNames[id] = input.value.trim();
+        saveStockNames(stockNames);
+        renderNameCell(td, id);
+      };
+
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') saveBtn.click();
+        if (e.key === 'Escape') cancelBtn.click();
+      });
+
+      const cancelBtn = document.createElement('button');
+      cancelBtn.className = 'cancel-btn';
+      cancelBtn.textContent = '취소';
+      cancelBtn.onclick = () => renderNameCell(td, id);
+
+      wrap.appendChild(input);
+      wrap.appendChild(saveBtn);
+      wrap.appendChild(cancelBtn);
+      td.appendChild(wrap);
+      input.focus();
+    }
+
     function renderTable(data) {
       const keys = Object.keys(data[0]);
-
-      // 헤더
       const headerRow = document.getElementById('headers');
+
       keys.forEach(k => {
         const th = document.createElement('th');
         th.textContent = k === 'value' ? '재고' : k;
@@ -100,12 +344,18 @@
         }
       });
 
-      // 행
       data.forEach(item => {
         const tr = document.createElement('tr');
         keys.forEach(k => {
           const td = document.createElement('td');
-          td.textContent = item[k] ?? '';
+          if (k === 'value') {
+            const span = document.createElement('span');
+            span.className = 'stock-num';
+            span.textContent = item[k] ?? '';
+            td.appendChild(span);
+          } else {
+            td.textContent = item[k] ?? '';
+          }
           tr.appendChild(td);
 
           if (k === 'id') {
@@ -118,16 +368,16 @@
       });
     }
 
-    // 초기 실행
     (async () => {
       try {
         const res = await fetch(API_URL);
         const data = await res.json();
         document.getElementById('loading').style.display = 'none';
-        document.getElementById('table').style.display = 'table';
+        document.getElementById('table-wrap').style.display = 'block';
         renderTable(data);
       } catch (e) {
-        document.getElementById('loading').textContent = '데이터 로딩 실패';
+        const el = document.getElementById('loading');
+        el.innerHTML = '<span class="error-msg">⚠ 데이터 로딩 실패</span>';
       }
     })();
   </script>

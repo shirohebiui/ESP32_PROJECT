@@ -1,3 +1,0 @@
-New-Item -ItemType SymbolicLink `
-  -Path "$env:APPDATA\FreeCAD\Mod\freecad-ai" `
-  -Target "C:\Users\사용자이름\freecad-ai"

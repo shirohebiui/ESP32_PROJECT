@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>담배 재고 현황</title>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -42,7 +43,6 @@
       font-size: 26px;
       font-weight: 600;
       letter-spacing: -0.5px;
-      color: var(--text);
     }
 
     .header-badge {
@@ -91,10 +91,7 @@
       background: var(--bg2);
     }
 
-    table {
-      border-collapse: collapse;
-      width: 100%;
-    }
+    table { border-collapse: collapse; width: 100%; }
 
     thead {
       background: var(--bg3);
@@ -123,7 +120,6 @@
     }
 
     tr:last-child td { border-bottom: none; }
-
     tr:hover td { background: rgba(255,255,255,0.02); }
 
     td:first-child {
@@ -139,23 +135,12 @@
       color: var(--accent);
     }
 
-    .name-cell {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
+    .name-cell { display: flex; align-items: center; gap: 10px; }
 
-    .name-text {
-      color: var(--text);
-      font-size: 14px;
-    }
+    .name-text { color: var(--text); font-size: 14px; }
+    .name-text.empty { color: var(--text3); font-style: italic; }
 
-    .name-text.empty {
-      color: var(--text3);
-      font-style: italic;
-    }
-
-    .edit-btn {
+    .edit-btn, .history-btn {
       background: none;
       border: 1px solid var(--border2);
       color: var(--text3);
@@ -174,11 +159,17 @@
       background: var(--accent-dim2);
     }
 
-    .edit-wrap {
-      display: flex;
-      align-items: center;
-      gap: 8px;
+    .history-btn {
+      border-color: rgba(100,160,255,0.3);
+      color: #6496ff;
     }
+
+    .history-btn:hover {
+      border-color: #6496ff;
+      background: rgba(100,150,255,0.08);
+    }
+
+    .edit-wrap { display: flex; align-items: center; gap: 8px; }
 
     .name-input {
       background: var(--bg3);
@@ -193,9 +184,7 @@
       transition: border-color 0.15s;
     }
 
-    .name-input:focus {
-      border-color: var(--accent);
-    }
+    .name-input:focus { border-color: var(--accent); }
 
     .save-btn {
       background: var(--accent);
@@ -224,16 +213,88 @@
       transition: all 0.15s;
     }
 
-    .cancel-btn:hover {
-      border-color: var(--danger);
-      color: var(--danger);
+    .cancel-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+    /* 모달 */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
     }
 
-    .error-msg {
-      color: var(--danger);
+    .modal-overlay.show { display: flex; }
+
+    .modal {
+      background: var(--bg2);
+      border: 1px solid var(--border2);
+      border-radius: 16px;
+      padding: 32px;
+      width: 90%;
+      max-width: 680px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .modal-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .modal-subtitle {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--text3);
+      margin-top: 4px;
+    }
+
+    .modal-close {
+      background: none;
+      border: 1px solid var(--border2);
+      color: var(--text3);
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+
+    .modal-close:hover { border-color: var(--danger); color: var(--danger); }
+
+    .modal-loading {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text2);
       font-size: 14px;
       padding: 40px 0;
+      justify-content: center;
     }
+
+    .chart-wrap {
+      background: var(--bg3);
+      border-radius: 10px;
+      padding: 20px;
+      margin-top: 8px;
+    }
+
+    .error-msg { color: var(--danger); font-size: 14px; padding: 40px 0; }
   </style>
 </head>
 <body>
@@ -256,17 +317,38 @@
     </table>
   </div>
 
+  <!-- 변경이력 모달 -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title" id="modal-title">변경 이력</div>
+          <div class="modal-subtitle" id="modal-subtitle"></div>
+        </div>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div id="modal-body">
+        <div class="modal-loading">
+          <div class="spinner"></div>
+          이력 불러오는 중...
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
-    const API_URL = 'https://scku0upgj8.execute-api.us-east-1.amazonaws.com/data';
+    const API_URL     = 'https://scku0upgj8.execute-api.us-east-1.amazonaws.com/data';
+    const HISTORY_URL = 'https://scku0upgj8.execute-api.us-east-1.amazonaws.com/history';
     const STORAGE_KEY = 'stockNames';
 
+    let chartInstance = null;
+
     function loadStockNames() {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? JSON.parse(saved) : {};
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch(e) { return {}; }
     }
 
-    function saveStockNames(stockNames) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(stockNames));
+    function saveStockNames(s) {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch(e) {}
     }
 
     let stockNames = loadStockNames();
@@ -292,15 +374,13 @@
     }
 
     function enableEdit(td, id) {
-      const currentName = stockNames[id] ?? '';
       td.innerHTML = '';
       const wrap = document.createElement('div');
       wrap.className = 'edit-wrap';
 
       const input = document.createElement('input');
       input.className = 'name-input';
-      input.value = currentName;
-      input.id = 'input-' + id;
+      input.value = stockNames[id] ?? '';
       input.placeholder = '재고명 입력';
 
       const saveBtn = document.createElement('button');
@@ -329,6 +409,98 @@
       input.focus();
     }
 
+    // 변경이력 모달 열기
+    async function openHistory(id) {
+      const name = stockNames[id] || id;
+      document.getElementById('modal-title').textContent = `변경 이력 — ${name}`;
+      document.getElementById('modal-subtitle').textContent = `ID: ${id}`;
+      document.getElementById('modal-body').innerHTML = `
+        <div class="modal-loading"><div class="spinner"></div>이력 불러오는 중...</div>
+      `;
+      document.getElementById('modal-overlay').classList.add('show');
+
+      if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+
+      try {
+        const res = await fetch(`${HISTORY_URL}?id=${encodeURIComponent(id)}`);
+        const raw = await res.json();
+        const items = typeof raw === 'string' ? JSON.parse(raw) : raw;
+
+        if (!items || items.length === 0) {
+          document.getElementById('modal-body').innerHTML = `
+            <p style="color:var(--text3); font-size:14px; text-align:center; padding:40px 0;">이력 데이터가 없습니다.</p>
+          `;
+          return;
+        }
+
+        // timestamp 기준 정렬
+        items.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+        const labels = items.map(i => i.timestamp);
+        const values = items.map(i => Number(i.value));
+
+        document.getElementById('modal-body').innerHTML = `<div class="chart-wrap"><canvas id="historyChart"></canvas></div>`;
+
+        const ctx = document.getElementById('historyChart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [{
+              label: '재고',
+              data: values,
+              borderColor: '#00e5a0',
+              backgroundColor: 'rgba(0,229,160,0.08)',
+              borderWidth: 2,
+              pointBackgroundColor: '#00e5a0',
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              tension: 0.3,
+              fill: true,
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: '#222228',
+                titleColor: '#9a9aa8',
+                bodyColor: '#f0f0f0',
+                borderColor: 'rgba(255,255,255,0.1)',
+                borderWidth: 1,
+              }
+            },
+            scales: {
+              x: {
+                ticks: { color: '#5a5a68', font: { family: 'DM Mono', size: 10 }, maxRotation: 45 },
+                grid: { color: 'rgba(255,255,255,0.04)' }
+              },
+              y: {
+                ticks: { color: '#5a5a68', font: { family: 'DM Mono', size: 11 } },
+                grid: { color: 'rgba(255,255,255,0.04)' }
+              }
+            }
+          }
+        });
+
+      } catch(e) {
+        document.getElementById('modal-body').innerHTML = `
+          <p style="color:var(--danger); font-size:14px; text-align:center; padding:40px 0;">⚠ 데이터 로딩 실패</p>
+        `;
+      }
+    }
+
+    function closeModal() {
+      document.getElementById('modal-overlay').classList.remove('show');
+      if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+    }
+
+    // 오버레이 클릭시 닫기
+    document.getElementById('modal-overlay').addEventListener('click', function(e) {
+      if (e.target === this) closeModal();
+    });
+
     function renderTable(data) {
       const keys = Object.keys(data[0]);
       const headerRow = document.getElementById('headers');
@@ -343,6 +515,11 @@
           headerRow.appendChild(thName);
         }
       });
+
+      // 변경이력 헤더
+      const thHist = document.createElement('th');
+      thHist.textContent = '이력';
+      headerRow.appendChild(thHist);
 
       data.forEach(item => {
         const tr = document.createElement('tr');
@@ -364,6 +541,16 @@
             tr.appendChild(tdName);
           }
         });
+
+        // 변경이력 버튼
+        const tdHist = document.createElement('td');
+        const histBtn = document.createElement('button');
+        histBtn.className = 'history-btn';
+        histBtn.textContent = '변경이력 조회';
+        histBtn.onclick = () => openHistory(item['id']);
+        tdHist.appendChild(histBtn);
+        tr.appendChild(tdHist);
+
         document.getElementById('rows').appendChild(tr);
       });
     }
@@ -375,7 +562,7 @@
         document.getElementById('loading').style.display = 'none';
         document.getElementById('table-wrap').style.display = 'block';
         renderTable(data);
-      } catch (e) {
+      } catch(e) {
         const el = document.getElementById('loading');
         el.innerHTML = '<span class="error-msg">⚠ 데이터 로딩 실패</span>';
       }

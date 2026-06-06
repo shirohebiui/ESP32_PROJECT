@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>담배 재고 현황</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f0f11;
+      --bg2: #18181c;
+      --bg3: #222228;
+      --border: rgba(255,255,255,0.07);
+      --border2: rgba(255,255,255,0.13);
+      --accent: #00e5a0;
+      --accent-dim: rgba(0,229,160,0.12);
+      --accent-dim2: rgba(0,229,160,0.06);
+      --text: #f0f0f0;
+      --text2: #9a9aa8;
+      --text3: #5a5a68;
+      --danger: #ff5f5f;
+    }
+
+    body {
+      font-family: 'Noto Sans KR', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 48px 32px;
+    }
+
+    .header {
+      display: flex;
+      align-items: flex-end;
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+
+    .header-title {
+      font-size: 26px;
+      font-weight: 600;
+      letter-spacing: -0.5px;
+    }
+
+    .header-badge {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--accent);
+      background: var(--accent-dim);
+      border: 1px solid rgba(0,229,160,0.25);
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-bottom: 3px;
+      letter-spacing: 0.5px;
+    }
+
+    .divider {
+      width: 100%;
+      height: 1px;
+      background: var(--border);
+      margin-bottom: 28px;
+    }
+
+    #loading {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text2);
+      font-size: 14px;
+      padding: 40px 0;
+    }
+
+    .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--border2);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .table-wrap {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      background: var(--bg2);
+    }
+
+    table { border-collapse: collapse; width: 100%; }
+
+    thead {
+      background: var(--bg3);
+      border-bottom: 1px solid var(--border2);
+    }
+
+    th {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      font-weight: 500;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      color: var(--text3);
+      padding: 14px 20px;
+      text-align: left;
+    }
+
+    th:first-child { color: var(--accent); }
+
+    td {
+      padding: 14px 20px;
+      font-size: 14px;
+      color: var(--text);
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+
+    td:first-child {
+      font-family: 'DM Mono', monospace;
+      font-size: 12px;
+      color: var(--text3);
+    }
+
+    .stock-num {
+      font-family: 'DM Mono', monospace;
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--accent);
+    }
+
+    .name-cell { display: flex; align-items: center; gap: 10px; }
+
+    .name-text { color: var(--text); font-size: 14px; }
+    .name-text.empty { color: var(--text3); font-style: italic; }
+
+    .edit-btn, .history-btn {
+      background: none;
+      border: 1px solid var(--border2);
+      color: var(--text3);
+      font-size: 11px;
+      font-family: 'Noto Sans KR', sans-serif;
+      padding: 3px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .edit-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-dim2);
+    }
+
+    .history-btn {
+      border-color: rgba(100,160,255,0.3);
+      color: #6496ff;
+    }
+
+    .history-btn:hover {
+      border-color: #6496ff;
+      background: rgba(100,150,255,0.08);
+    }
+
+    .edit-wrap { display: flex; align-items: center; gap: 8px; }
+
+    .name-input {
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 13px;
+      padding: 5px 10px;
+      border-radius: 7px;
+      width: 140px;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+
+    .name-input:focus { border-color: var(--accent); }
+
+    .save-btn {
+      background: var(--accent);
+      border: none;
+      color: #0f0f11;
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 5px 12px;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+
+    .save-btn:hover { opacity: 0.85; }
+
+    .cancel-btn {
+      background: none;
+      border: 1px solid var(--border2);
+      color: var(--text3);
+      font-family: 'Noto Sans KR', sans-serif;
+      font-size: 12px;
+      padding: 5px 10px;
+      border-radius: 7px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+
+    .cancel-btn:hover { border-color: var(--danger); color: var(--danger); }
+
+    /* 모달 */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.show { display: flex; }
+
+    .modal {
+      background: var(--bg2);
+      border: 1px solid var(--border2);
+      border-radius: 16px;
+      padding: 32px;
+      width: 90%;
+      max-width: 680px;
+      max-height: 80vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+
+    .modal-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .modal-subtitle {
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      color: var(--text3);
+      margin-top: 4px;
+    }
+
+    .modal-close {
+      background: none;
+      border: 1px solid var(--border2);
+      color: var(--text3);
+      width: 30px;
+      height: 30px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+    }
+
+    .modal-close:hover { border-color: var(--danger); color: var(--danger); }
+
+    .modal-loading {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--text2);
+      font-size: 14px;
+      padding: 40px 0;
+      justify-content: center;
+    }
+
+    .chart-wrap {
+      background: var(--bg3);
+      border-radius: 10px;
+      padding: 20px;
+      margin-top: 8px;
+    }
+
+    .error-msg { color: var(--danger); font-size: 14px; padding: 40px 0; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1 class="header-title">담배 진열 현황</h1>
+    <span class="header-badge">LIVE</span>
+  </div>
+  <div class="divider"></div>
+
+  <div id="loading">
+    <div class="spinner"></div>
+    데이터 불러오는 중...
+  </div>
+
+  <div class="table-wrap" id="table-wrap" style="display:none">
+    <table id="table">
+      <thead><tr id="headers"></tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+
+  <!-- 변경이력 모달 -->
+  <div class="modal-overlay" id="modal-overlay">
+    <div class="modal">
+      <div class="modal-header">
+        <div>
+          <div class="modal-title" id="modal-title">변경 이력</div>
+          <div class="modal-subtitle" id="modal-subtitle"></div>
+        </div>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div id="modal-body">
+        <div class="modal-loading">
+          <div class="spinner"></div>
+          이력 불러오는 중...
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL     = 'https://scku0upgj8.execute-api.us-east-1.amazonaws.com/data';
+    const HISTORY_URL = 'https://scku0upgj8.execute-api.us-east-1.amazonaws.com/history';
+    const STORAGE_KEY = 'stockNames';
+
+    let chartInstance = null;
+
+    function loadStockNames() {
+      try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch(e) { return {}; }
+    }
+
+    function saveStockNames(s) {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch(e) {}
+    }
+
+    let stockNames = loadStockNames();
+
+    function renderNameCell(td, id) {
+      const name = stockNames[id] || '';
+      td.innerHTML = '';
+      const wrap = document.createElement('div');
+      wrap.className = 'name-cell';
+
+      const span = document.createElement('span');
+      span.className = 'name-text' + (name ? '' : ' empty');
+      span.textContent = name || '(미등록)';
+      wrap.appendChild(span);
+
+      const btn = document.createElement('button');
+      btn.className = 'edit-btn';
+      btn.textContent = '수정';
+      btn.onclick = () => enableEdit(td, id);
+      wrap.appendChild(btn);
+
+      td.appendChild(wrap);
+    }
+
+    function enableEdit(td, id) {
+      td.innerHTML = '';
+      const wrap = document.createElement('div');
+      wrap.className = 'edit-wrap';
+
+      const input = document.createElement('input');
+      input.className = 'name-input';
+      input.value = stockNames[id] ?? '';
+      input.placeholder = '재고명 입력';
+
+      const saveBtn = document.createElement('button');
+      saveBtn.className = 'save-btn';
+      saveBtn.textContent = '저장';
+      saveBtn.onclick = () => {
+        stockNames[id] = input.value.trim();
+        saveStockNames(stockNames);
+        renderNameCell(td, id);
+      };
+
+      input.addEventListener('keydown', e => {
+        if (e.key === 'Enter') saveBtn.click();
+        if (e.key === 'Escape') cancelBtn.click();
+      });
+
+      const cancelBtn = document.createElement('button');
+      cancelBtn.className = 'cancel-btn';
+      cancelBtn.textContent = '취소';
+      cancelBtn.onclick = () => renderNameCell(td, id);
+
+      wrap.appendChild(input);
+      wrap.appendChild(saveBtn);
+      wrap.appendChild(cancelBtn);
+      td.appendChild(wrap);
+      input.focus();
+    }
+
+    // 변경이력 모달 열기
+    async function openHistory(id) {
+      const name = stockNames[id] || id;
+      document.getElementById('modal-title').textContent = `변경 이력 — ${name}`;
+      document.getElementById('modal-subtitle').textContent = `ID: ${id}`;
+      document.getElementById('modal-body').innerHTML = `
+        <div class="modal-loading"><div class="spinner"></div>이력 불러오는 중...</div>
+      `;
+      document.getElementById('modal-overlay').classList.add('show');
+
+      if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+
+      try {
+        const res = await fetch(`${HISTORY_URL}?id=${encodeURIComponent(id)}`);
+        const raw = await res.json();
+        const items = typeof raw === 'string' ? JSON.parse(raw) : raw;
+
+        if (!items || items.length === 0) {
+          document.getElementById('modal-body').innerHTML = `
+            <p style="color:var(--text3); font-size:14px; text-align:center; padding:40px 0;">이력 데이터가 없습니다.</p>
+          `;
+          return;
+        }
+
+        // timestamp 기준 정렬
+        items.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+        const labels = items.map(i => i.timestamp);
+        const values = items.map(i => Number(i.value));
+
+        document.getElementById('modal-body').innerHTML = `<div class="chart-wrap"><canvas id="historyChart"></canvas></div>`;
+
+        const ctx = document.getElementById('historyChart').getContext('2d');
+        chartInstance = new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [{
+              label: '재고',
+              data: values,
+              borderColor: '#00e5a0',
+              backgroundColor: 'rgba(0,229,160,0.08)',
+              borderWidth: 2,
+              pointBackgroundColor: '#00e5a0',
+              pointRadius: 4,
+              pointHoverRadius: 6,
+              tension: 0.3,
+              fill: true,
+            }]
+          },
+          options: {
+            responsive: true,
+            plugins: {
+              legend: { display: false },
+              tooltip: {
+                backgroundColor: '#222228',
+                titleColor: '#9a9aa8',
+                bodyColor: '#f0f0f0',
+                borderColor: 'rgba(255,255,255,0.1)',
+                borderWidth: 1,
+              }
+            },
+            scales: {
+              x: {
+                ticks: { color: '#5a5a68', font: { family: 'DM Mono', size: 10 }, maxRotation: 45 },
+                grid: { color: 'rgba(255,255,255,0.04)' }
+              },
+              y: {
+                ticks: { color: '#5a5a68', font: { family: 'DM Mono', size: 11 } },
+                grid: { color: 'rgba(255,255,255,0.04)' }
+              }
+            }
+          }
+        });
+
+      } catch(e) {
+        document.getElementById('modal-body').innerHTML = `
+          <p style="color:var(--danger); font-size:14px; text-align:center; padding:40px 0;">⚠ 데이터 로딩 실패</p>
+        `;
+      }
+    }
+
+    function closeModal() {
+      document.getElementById('modal-overlay').classList.remove('show');
+      if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
+    }
+
+    // 오버레이 클릭시 닫기
+    document.getElementById('modal-overlay').addEventListener('click', function(e) {
+      if (e.target === this) closeModal();
+    });
+
+    function renderTable(data) {
+      const keys = Object.keys(data[0]);
+      const headerRow = document.getElementById('headers');
+
+      keys.forEach(k => {
+        const th = document.createElement('th');
+        th.textContent = k === 'value' ? '재고' : k;
+        headerRow.appendChild(th);
+        if (k === 'id') {
+          const thName = document.createElement('th');
+          thName.textContent = '재고명';
+          headerRow.appendChild(thName);
+        }
+      });
+
+      // 변경이력 헤더
+      const thHist = document.createElement('th');
+      thHist.textContent = '이력';
+      headerRow.appendChild(thHist);
+
+      data.forEach(item => {
+        const tr = document.createElement('tr');
+        keys.forEach(k => {
+          const td = document.createElement('td');
+          if (k === 'value') {
+            const span = document.createElement('span');
+            span.className = 'stock-num';
+            span.textContent = item[k] ?? '';
+            td.appendChild(span);
+          } else {
+            td.textContent = item[k] ?? '';
+          }
+          tr.appendChild(td);
+
+          if (k === 'id') {
+            const tdName = document.createElement('td');
+            renderNameCell(tdName, item[k]);
+            tr.appendChild(tdName);
+          }
+        });
+
+        // 변경이력 버튼
+        const tdHist = document.createElement('td');
+        const histBtn = document.createElement('button');
+        histBtn.className = 'history-btn';
+        histBtn.textContent = '변경이력 조회';
+        histBtn.onclick = () => openHistory(item['id']);
+        tdHist.appendChild(histBtn);
+        tr.appendChild(tdHist);
+
+        document.getElementById('rows').appendChild(tr);
+      });
+    }
+
+    (async () => {
+      try {
+        const res = await fetch(API_URL);
+        const data = await res.json();
+        document.getElementById('loading').style.display = 'none';
+        document.getElementById('table-wrap').style.display = 'block';
+        renderTable(data);
+      } catch(e) {
+        const el = document.getElementById('loading');
+        el.innerHTML = '<span class="error-msg">⚠ 데이터 로딩 실패</span>';
+      }
+    })();
+  </script>
+</body>
+</html>
